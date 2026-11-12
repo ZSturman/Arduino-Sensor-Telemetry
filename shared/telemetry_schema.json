@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arduino-sensors.local/schemas/telemetry-envelope.json",
+  "title": "Arduino Mega Telemetry Envelope",
+  "description": "NDJSON envelope emitted by the Arduino Mega firmware and transported through the backend to the React frontend.",
+  "type": "object",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/telemetryEnvelope"
+    },
+    {
+      "$ref": "#/$defs/eventEnvelope"
+    }
+  ],
+  "$defs": {
+    "jsonScalar": {
+      "type": [
+        "string",
+        "number",
+        "integer",
+        "boolean",
+        "null"
+      ]
+    },
+    "sensorStatus": {
+      "type": "object",
+      "description": "Per-sensor runtime health emitted alongside telemetry snapshots.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "connected": {
+            "type": "boolean"
+          },
+          "healthy": {
+            "type": "boolean"
+          },
+          "last_update_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": {
+          "$ref": "#/$defs/jsonScalar"
+        }
+      }
+    },
+    "baseEnvelope": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string"
+        },
+        "message_type": {
+          "type": "string",
+          "enum": [
+            "telemetry",
+            "event"
+          ]
+        },
+        "timestamp_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "device_id": {
+          "type": "string"
+        },
+        "transport": {
+          "type": "string",
+          "description": "Firmware-side transport identifier such as usb_serial or bluetooth_serial."
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "timestamp_ms",
+        "sequence",
+        "device_id",
+        "transport"
+      ]
+    },
+    "telemetryEnvelope": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/baseEnvelope"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "message_type": {
+              "const": "telemetry"
+            },
+            "metrics": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/jsonScalar"
+              }
+            },
+            "sensor_status": {
+              "$ref": "#/$defs/sensorStatus"
+            }
+          },
+          "required": [
+            "metrics",
+            "sensor_status"
+          ]
+        }
+      ]
+    },
+    "eventEnvelope": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/baseEnvelope"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "message_type": {
+              "const": "event"
+            },
+            "event": {
+              "type": "object",
+              "properties": {
+                "source": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "fields": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/$defs/jsonScalar"
+                  }
+                }
+              },
+              "required": [
+                "source",
+                "name",
+                "fields"
+              ]
+            }
+          },
+          "required": [
+            "event"
+          ]
+        }
+      ]
+    }
+  }
+}
+

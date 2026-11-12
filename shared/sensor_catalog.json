@@ -1,0 +1,663 @@
+{
+  "schema_version": "1.0.0",
+  "board": "Arduino Mega 2560",
+  "firmware_sketch": "firmware/mega_telemetry/mega_telemetry.ino",
+  "transport_note": "Version 1 uses USB serial. Bluetooth serial is the next phase and should reuse the same envelope and backend/frontend flow.",
+  "sensors": [
+    {
+      "id": "dht11",
+      "name": "DHT11 Temperature / Humidity",
+      "category": "environment",
+      "purpose": "Reads ambient temperature and humidity for environmental telemetry.",
+      "required_parts": [
+        "Arduino Mega 2560",
+        "DHT11 module or sensor breakout",
+        "Jumper wires"
+      ],
+      "pins": [
+        {
+          "mega_pin": "5V",
+          "module_pin": "VCC",
+          "notes": "Sensor power."
+        },
+        {
+          "mega_pin": "GND",
+          "module_pin": "GND",
+          "notes": "Common ground."
+        },
+        {
+          "mega_pin": "D22",
+          "module_pin": "DATA",
+          "notes": "Digital data line."
+        }
+      ],
+      "wiring_summary": "Connect VCC to 5V, GND to GND, and DATA to D22. If you are using a bare DHT11 package instead of a module, add a 10k pull-up resistor from DATA to 5V.",
+      "breadboard_description": "Place the DHT11 module at the edge of the breadboard, route power rails first, and keep the data jumper short to reduce noise.",
+      "ascii_diagram": "Mega 5V  -> DHT11 VCC\nMega GND -> DHT11 GND\nMega D22 -> DHT11 DATA",
+      "firmware": {
+        "file": "firmware/mega_telemetry/src/sensors/DhtSensor.cpp",
+        "module": "DhtSensor",
+        "function": "tick() and appendSnapshot()"
+      },
+      "libraries": [
+        "DHT sensor library by Adafruit",
+        "ArduinoJson"
+      ],
+      "expected_fields": [
+        "temperature_c",
+        "humidity_pct"
+      ],
+      "frontend": {
+        "card_title": "Environment",
+        "appearance": "Shows temperature and humidity values with numeric history."
+      },
+      "constraints": [
+        "The DHT11 updates slowly; polling faster than about once every 2 seconds will produce stale or invalid reads.",
+        "Use a stable 5V supply to avoid checksum errors."
+      ]
+    },
+    {
+      "id": "pir_motion",
+      "name": "PIR Motion Sensor",
+      "category": "occupancy",
+      "purpose": "Detects movement and occupancy changes in front of the sensor.",
+      "required_parts": [
+        "Arduino Mega 2560",
+        "PIR motion sensor module",
+        "Jumper wires"
+      ],
+      "pins": [
+        {
+          "mega_pin": "5V",
+          "module_pin": "VCC",
+          "notes": "Sensor power."
+        },
+        {
+          "mega_pin": "GND",
+          "module_pin": "GND",
+          "notes": "Common ground."
+        },
+        {
+          "mega_pin": "D23",
+          "module_pin": "OUT",
+          "notes": "Digital motion signal."
+        }
+      ],
+      "wiring_summary": "Power the PIR from 5V and GND, then connect OUT to D23.",
+      "breadboard_description": "Mount the PIR so the lens points into open space; avoid placing it directly next to motors or the LCD backlight power lines.",
+      "ascii_diagram": "Mega 5V  -> PIR VCC\nMega GND -> PIR GND\nMega D23 -> PIR OUT",
+      "firmware": {
+        "file": "firmware/mega_telemetry/src/sensors/PirSensor.cpp",
+        "module": "PirSensor",
+        "function": "tick() and appendSnapshot()"
+      },
+      "libraries": [
+        "ArduinoJson"
+      ],
+      "expected_fields": [
+        "motion"
+      ],
+      "frontend": {
+        "card_title": "Motion",
+        "appearance": "Shows current motion state and a recent boolean history."
+      },
+      "constraints": [
+        "Most PIR modules need 30 to 60 seconds of warmup after power-on.",
+        "The output can remain high for a configurable hold interval depending on the module trimmer."
+      ]
+    },
+    {
+      "id": "hc_sr04",
+      "name": "HC-SR04 Ultrasonic Distance",
+      "category": "distance",
+      "purpose": "Measures distance to an object in front of the transducer pair.",
+      "required_parts": [
+        "Arduino Mega 2560",
+        "HC-SR04 ultrasonic module",
+        "Jumper wires"
+      ],
+      "pins": [
+        {
+          "mega_pin": "5V",
+          "module_pin": "VCC",
+          "notes": "Sensor power."
+        },
+        {
+          "mega_pin": "GND",
+          "module_pin": "GND",
+          "notes": "Common ground."
+        },
+        {
+          "mega_pin": "D24",
+          "module_pin": "TRIG",
+          "notes": "Trigger output."
+        },
+        {
+          "mega_pin": "D25",
+          "module_pin": "ECHO",
+          "notes": "Echo input."
+        }
+      ],
+      "wiring_summary": "Connect TRIG to D24 and ECHO to D25. The HC-SR04 runs happily from 5V on a Mega 2560.",
+      "breadboard_description": "Place the ultrasonic module off the edge of the breadboard or shield so the transducers face outward with a clear line of sight.",
+      "ascii_diagram": "Mega 5V  -> HC-SR04 VCC\nMega GND -> HC-SR04 GND\nMega D24 -> TRIG\nMega D25 -> ECHO",
+      "firmware": {
+        "file": "firmware/mega_telemetry/src/sensors/UltrasonicSensor.cpp",
+        "module": "UltrasonicSensor",
+        "function": "tick() and appendSnapshot()"
+      },
+      "libraries": [
+        "NewPing",
+        "ArduinoJson"
+      ],
+      "expected_fields": [
+        "distance_cm"
+      ],
+      "frontend": {
+        "card_title": "Distance",
+        "appearance": "Shows live distance with a sparkline."
+      },
+      "constraints": [
+        "Avoid measuring against soft fabric or angled surfaces if you want stable readings.",
+        "Keep the sensor away from fan airflow and strong vibrations."
+      ]
+    },
+    {
+      "id": "sound_sensor",
+      "name": "Sound Sensor Module",
+      "category": "analog",
+      "purpose": "Reports analog microphone amplitude for ambient noise detection.",
+      "required_parts": [
+        "Arduino Mega 2560",
+        "Microphone sound sensor module",
+        "Jumper wires"
+      ],
+      "pins": [
+        {
+          "mega_pin": "5V",
+          "module_pin": "VCC",
+          "notes": "Sensor power."
+        },
+        {
+          "mega_pin": "GND",
+          "module_pin": "GND",
+          "notes": "Common ground."
+        },
+        {
+          "mega_pin": "A0",
+          "module_pin": "AO",
+          "notes": "Analog microphone output."
+        }
+      ],
+      "wiring_summary": "Use the analog output AO into A0; the digital threshold output is not used in V1 because analog telemetry is more flexible.",
+      "breadboard_description": "Keep the module away from the DC motor and fan wiring to reduce electrical noise.",
+      "ascii_diagram": "Mega 5V  -> Sound VCC\nMega GND -> Sound GND\nMega A0  -> Sound AO",
+      "firmware": {
+        "file": "firmware/mega_telemetry/src/sensors/SoundSensor.cpp",
+        "module": "SoundSensor",
+        "function": "tick() and appendSnapshot()"
+      },
+      "libraries": [
+        "ArduinoJson"
+      ],
+      "expected_fields": [
+        "sound_raw"
+      ],
+      "frontend": {
+        "card_title": "Sound",
+        "appearance": "Shows raw analog level and trend."
+      },
+      "constraints": [
+        "The module output is noisy by nature; treat it as relative intensity instead of calibrated decibels.",
+        "Avoid long analog leads."
+      ]
+    },
+    {
+      "id": "rain_sensor",
+      "name": "Rain / Water Sensor",
+      "category": "moisture",
+      "purpose": "Measures water presence using the sensor pad and its controller board.",
+      "required_parts": [
+        "Arduino Mega 2560",
+        "Rain sensor pad",
+        "Rain sensor controller module",
+        "Jumper wires"
+      ],
+      "pins": [
+        {
+          "mega_pin": "5V",
+          "module_pin": "VCC",
+          "notes": "Controller board power."
+        },
+        {
+          "mega_pin": "GND",
+          "module_pin": "GND",
+          "notes": "Common ground."
+        },
+        {
+          "mega_pin": "A1",
+          "module_pin": "AO",
+          "notes": "Analog moisture value."
+        },
+        {
+          "mega_pin": "D29",
+          "module_pin": "DO",
+          "notes": "Digital threshold signal."
+        }
+      ],
+      "wiring_summary": "Connect the sensor pad to its driver board, then route AO to A1 and DO to D29 for both raw and thresholded telemetry.",
+      "breadboard_description": "Keep the controller on the breadboard but place the sensor pad off-board where it can safely contact water. Dry the pad after testing.",
+      "ascii_diagram": "Mega 5V  -> Rain VCC\nMega GND -> Rain GND\nMega A1  -> Rain AO\nMega D29 -> Rain DO",
+      "firmware": {
+        "file": "firmware/mega_telemetry/src/sensors/RainSensor.cpp",
+        "module": "RainSensor",
+        "function": "tick() and appendSnapshot()"
+      },
+      "libraries": [
+        "ArduinoJson"
+      ],
+      "expected_fields": [
+        "rain_raw",
+        "rain_detected"
+      ],
+      "frontend": {
+        "card_title": "Water",
+        "appearance": "Shows analog rain reading and threshold state."
+      },
+      "constraints": [
+        "Rain pads corrode if left wet for long periods; power them only during tests if you need long life.",
+        "Treat the analog value as relative and calibrate thresholds for your module."
+      ]
+    },
+    {
+      "id": "joystick",
+      "name": "Joystick Module",
+      "category": "input",
+      "purpose": "Captures X/Y analog position and center-button press state.",
+      "required_parts": [
+        "Arduino Mega 2560",
+        "2-axis joystick module",
+        "Jumper wires"
+      ],
+      "pins": [
+        {
+          "mega_pin": "5V",
+          "module_pin": "VCC",
+          "notes": "Module power."
+        },
+        {
+          "mega_pin": "GND",
+          "module_pin": "GND",
+          "notes": "Common ground."
+        },
+        {
+          "mega_pin": "A2",
+          "module_pin": "VRx",
+          "notes": "Horizontal axis."
+        },
+        {
+          "mega_pin": "A3",
+          "module_pin": "VRy",
+          "notes": "Vertical axis."
+        },
+        {
+          "mega_pin": "D26",
+          "module_pin": "SW",
+          "notes": "Center push button."
+        }
+      ],
+      "wiring_summary": "Connect VRx to A2, VRy to A3, and SW to D26 with the firmware using INPUT_PULLUP on the button line.",
+      "breadboard_description": "If your joystick is on a small breakout, seat it near the breadboard edge for easy manual access.",
+      "ascii_diagram": "Mega 5V  -> Joystick VCC\nMega GND -> Joystick GND\nMega A2  -> VRx\nMega A3  -> VRy\nMega D26 -> SW",
+      "firmware": {
+        "file": "firmware/mega_telemetry/src/sensors/JoystickSensor.cpp",
+        "module": "JoystickSensor",
+        "function": "tick() and appendSnapshot()"
+      },
+      "libraries": [
+        "ArduinoJson"
+      ],
+      "expected_fields": [
+        "joy_x",
+        "joy_y",
+        "joy_button"
+      ],
+      "frontend": {
+        "card_title": "Joystick",
+        "appearance": "Shows live X/Y axes and button state."
+      },
+      "constraints": [
+        "Raw center values vary slightly by module; expect around 512 at rest, not exactly 512.",
+        "Button logic is active-low in this wiring."
+      ]
+    },
+    {
+      "id": "touch_sensor",
+      "name": "Touch Sensor Module",
+      "category": "input",
+      "purpose": "Reports capacitive touch contact as a digital input.",
+      "required_parts": [
+        "Arduino Mega 2560",
+        "Touch sensor module",
+        "Jumper wires"
+      ],
+      "pins": [
+        {
+          "mega_pin": "5V",
+          "module_pin": "VCC",
+          "notes": "Module power."
+        },
+        {
+          "mega_pin": "GND",
+          "module_pin": "GND",
+          "notes": "Common ground."
+        },
+        {
+          "mega_pin": "D27",
+          "module_pin": "SIG",
+          "notes": "Digital touch output."
+        }
+      ],
+      "wiring_summary": "Power the module from 5V and route SIG to D27.",
+      "breadboard_description": "Expose the touch pad so it is easy to press without pulling on the jumper wires.",
+      "ascii_diagram": "Mega 5V  -> Touch VCC\nMega GND -> Touch GND\nMega D27 -> Touch SIG",
+      "firmware": {
+        "file": "firmware/mega_telemetry/src/sensors/TouchSensor.cpp",
+        "module": "TouchSensor",
+        "function": "tick() and appendSnapshot()"
+      },
+      "libraries": [
+        "ArduinoJson"
+      ],
+      "expected_fields": [
+        "touch"
+      ],
+      "frontend": {
+        "card_title": "Touch",
+        "appearance": "Shows a boolean touch state card."
+      },
+      "constraints": [
+        "Cheap touch modules are sensitive to supply noise and nearby cables.",
+        "Mount away from the ultrasonic sensor and RFID antenna when possible."
+      ]
+    },
+    {
+      "id": "rotary_encoder",
+      "name": "Rotary Encoder Module",
+      "category": "input",
+      "purpose": "Tracks incremental rotation plus the encoder pushbutton.",
+      "required_parts": [
+        "Arduino Mega 2560",
+        "Rotary encoder breakout",
+        "Jumper wires"
+      ],
+      "pins": [
+        {
+          "mega_pin": "D2",
+          "module_pin": "CLK",
+          "notes": "Quadrature channel A."
+        },
+        {
+          "mega_pin": "D3",
+          "module_pin": "DT",
+          "notes": "Quadrature channel B."
+        },
+        {
+          "mega_pin": "D28",
+          "module_pin": "SW",
+          "notes": "Encoder pushbutton."
+        },
+        {
+          "mega_pin": "5V",
+          "module_pin": "+",
+          "notes": "Module power."
+        },
+        {
+          "mega_pin": "GND",
+          "module_pin": "GND",
+          "notes": "Common ground."
+        }
+      ],
+      "wiring_summary": "Use D2 and D3 for the quadrature channels and D28 for the pushbutton so rotation can be tracked cleanly.",
+      "breadboard_description": "Place the encoder where it can rotate freely without colliding with the USB cable or sensor modules.",
+      "ascii_diagram": "Mega D2  -> Encoder CLK\nMega D3  -> Encoder DT\nMega D28 -> Encoder SW\nMega 5V  -> Encoder +\nMega GND -> Encoder GND",
+      "firmware": {
+        "file": "firmware/mega_telemetry/src/sensors/RotaryEncoderSensor.cpp",
+        "module": "RotaryEncoderSensor",
+        "function": "tick(), emitMovementEvent(), and appendSnapshot()"
+      },
+      "libraries": [
+        "Encoder",
+        "ArduinoJson"
+      ],
+      "expected_fields": [
+        "encoder_position",
+        "encoder_delta",
+        "encoder_button"
+      ],
+      "frontend": {
+        "card_title": "Encoder",
+        "appearance": "Shows current position and recent deltas, with button state."
+      },
+      "constraints": [
+        "Mechanical encoders can bounce; the firmware smooths position at the event level but physical quality still matters.",
+        "Keep the channel wires short."
+      ]
+    },
+    {
+      "id": "pushbutton",
+      "name": "Pushbutton Input",
+      "category": "input",
+      "purpose": "Provides a simple digital input and edge-triggered event source.",
+      "required_parts": [
+        "Arduino Mega 2560",
+        "Momentary pushbutton",
+        "Jumper wires"
+      ],
+      "pins": [
+        {
+          "mega_pin": "D7",
+          "module_pin": "Signal side",
+          "notes": "Firmware uses INPUT_PULLUP."
+        },
+        {
+          "mega_pin": "GND",
+          "module_pin": "Ground side",
+          "notes": "Ground reference."
+        }
+      ],
+      "wiring_summary": "Wire one side of the button to D7 and the opposite side to GND. The internal pull-up keeps the line stable.",
+      "breadboard_description": "Straddle the button across the breadboard center gap and verify the legs are on the correct opposing rows.",
+      "ascii_diagram": "Mega D7  -> Button leg 1\nMega GND -> Button leg 2",
+      "firmware": {
+        "file": "firmware/mega_telemetry/src/sensors/PushButtonSensor.cpp",
+        "module": "PushButtonSensor",
+        "function": "tick() and appendSnapshot()"
+      },
+      "libraries": [
+        "ArduinoJson"
+      ],
+      "expected_fields": [
+        "button_pressed"
+      ],
+      "frontend": {
+        "card_title": "Button",
+        "appearance": "Shows current pressed state and edge events."
+      },
+      "constraints": [
+        "This wiring is active-low.",
+        "Do not add an external pull-down at the same time as INPUT_PULLUP."
+      ]
+    },
+    {
+      "id": "ir_receiver",
+      "name": "IR Receiver Module",
+      "category": "input",
+      "purpose": "Decodes infrared remote control frames into telemetry events.",
+      "required_parts": [
+        "Arduino Mega 2560",
+        "IR receiver module",
+        "IR remote",
+        "Jumper wires"
+      ],
+      "pins": [
+        {
+          "mega_pin": "5V",
+          "module_pin": "VCC",
+          "notes": "Module power."
+        },
+        {
+          "mega_pin": "GND",
+          "module_pin": "GND",
+          "notes": "Common ground."
+        },
+        {
+          "mega_pin": "D6",
+          "module_pin": "OUT",
+          "notes": "IR decode input."
+        }
+      ],
+      "wiring_summary": "Connect the IR receiver output to D6 and aim the remote at the receiver while testing.",
+      "breadboard_description": "Mount the receiver so the dome faces outward with line-of-sight to the remote.",
+      "ascii_diagram": "Mega 5V  -> IR VCC\nMega GND -> IR GND\nMega D6  -> IR OUT",
+      "firmware": {
+        "file": "firmware/mega_telemetry/src/sensors/IrReceiverSensor.cpp",
+        "module": "IrReceiverSensor",
+        "function": "tick() and appendSnapshot()"
+      },
+      "libraries": [
+        "IRremote",
+        "ArduinoJson"
+      ],
+      "expected_fields": [
+        "ir_last_code_hex"
+      ],
+      "frontend": {
+        "card_title": "IR",
+        "appearance": "Shows the most recent decoded IR code and related events."
+      },
+      "constraints": [
+        "Direct sunlight and some LEDs can interfere with IR reception.",
+        "The stored code is the last successfully decoded raw frame in hex."
+      ]
+    },
+    {
+      "id": "rc522_rfid",
+      "name": "RC522 RFID / NFC Reader",
+      "category": "identity",
+      "purpose": "Reads RFID or NFC tag UIDs over SPI and emits scan events.",
+      "required_parts": [
+        "Arduino Mega 2560",
+        "RC522 module",
+        "Jumper wires"
+      ],
+      "pins": [
+        {
+          "mega_pin": "3.3V",
+          "module_pin": "VCC",
+          "notes": "RC522 must be powered from 3.3V, not 5V."
+        },
+        {
+          "mega_pin": "GND",
+          "module_pin": "GND",
+          "notes": "Common ground."
+        },
+        {
+          "mega_pin": "D53",
+          "module_pin": "SDA/SS",
+          "notes": "SPI slave select."
+        },
+        {
+          "mega_pin": "D49",
+          "module_pin": "RST",
+          "notes": "Reset line."
+        },
+        {
+          "mega_pin": "D50",
+          "module_pin": "MISO",
+          "notes": "Hardware SPI."
+        },
+        {
+          "mega_pin": "D51",
+          "module_pin": "MOSI",
+          "notes": "Hardware SPI."
+        },
+        {
+          "mega_pin": "D52",
+          "module_pin": "SCK",
+          "notes": "Hardware SPI."
+        }
+      ],
+      "wiring_summary": "Use 3.3V power only. Connect the module over the Mega hardware SPI pins and use D53 as SS plus D49 for reset.",
+      "breadboard_description": "Keep the RC522 antenna face unobstructed and away from noisy motor wiring. Route the SPI wires directly if possible.",
+      "ascii_diagram": "Mega 3.3V -> RC522 VCC\nMega GND  -> RC522 GND\nMega D53  -> SDA/SS\nMega D49  -> RST\nMega D50  -> MISO\nMega D51  -> MOSI\nMega D52  -> SCK",
+      "firmware": {
+        "file": "firmware/mega_telemetry/src/sensors/RfidSensor.cpp",
+        "module": "RfidSensor",
+        "function": "begin(), tick(), and appendSnapshot()"
+      },
+      "libraries": [
+        "MFRC522",
+        "SPI",
+        "ArduinoJson"
+      ],
+      "expected_fields": [
+        "rfid_last_uid"
+      ],
+      "frontend": {
+        "card_title": "RFID",
+        "appearance": "Shows the last scanned UID and event log entries for tag scans."
+      },
+      "constraints": [
+        "The RC522 is a 3.3V device. Do not power it from 5V.",
+        "Some clones are sensitive to long SPI leads."
+      ]
+    },
+    {
+      "id": "keypad_4x4",
+      "name": "4x4 Matrix Keypad",
+      "category": "input",
+      "purpose": "Captures key presses from a 4x4 matrix keypad as telemetry events.",
+      "required_parts": [
+        "Arduino Mega 2560",
+        "4x4 matrix keypad",
+        "Jumper wires"
+      ],
+      "pins": [
+        {
+          "mega_pin": "D30-D33",
+          "module_pin": "R1-R4",
+          "notes": "Keypad rows."
+        },
+        {
+          "mega_pin": "D34-D37",
+          "module_pin": "C1-C4",
+          "notes": "Keypad columns."
+        }
+      ],
+      "wiring_summary": "Wire the keypad rows to D30-D33 and the columns to D34-D37. The firmware scans the matrix through the Keypad library.",
+      "breadboard_description": "The keypad usually plugs directly with jumper wires rather than sitting on the breadboard. Label the ribbon if the connector order is unclear.",
+      "ascii_diagram": "R1->D30  R2->D31  R3->D32  R4->D33\nC1->D34  C2->D35  C3->D36  C4->D37",
+      "firmware": {
+        "file": "firmware/mega_telemetry/src/sensors/KeypadSensor.cpp",
+        "module": "KeypadSensor",
+        "function": "tick() and appendSnapshot()"
+      },
+      "libraries": [
+        "Keypad",
+        "ArduinoJson"
+      ],
+      "expected_fields": [
+        "keypad_last_key"
+      ],
+      "frontend": {
+        "card_title": "Keypad",
+        "appearance": "Shows the last key pressed and event stream entries for each input."
+      },
+      "constraints": [
+        "Matrix keypad pin order differs by vendor; verify the ribbon order before powering up.",
+        "The firmware stores only the last key in snapshots, with full key activity preserved as events."
+      ]
+    }
+  ]
+}
